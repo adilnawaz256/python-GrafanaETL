@@ -1,0 +1,200 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "ETL Operations & System Health",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "custom": {} } },
+      "gridPos": { "h": 7, "w": 12, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" } },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT status, COUNT(*) AS file_count FROM etl_file_batches WHERE received_at >= CURRENT_DATE GROUP BY status;",
+          "refId": "A"
+        }
+      ],
+      "title": "Today's Processed Files by Status",
+      "type": "barchart"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "custom": {} } },
+      "gridPos": { "h": 7, "w": 12, "x": 12, "y": 1 },
+      "id": 2,
+      "options": { "showTableHeader": true },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT batch_id, file_name, source_type, status, total_rows, inserted_rows, failed_rows, processing_started_at FROM etl_file_batches ORDER BY batch_id DESC LIMIT 10;",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent File Batches",
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 },
+      "id": 101,
+      "title": "RAN & Network Performance KPIs",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT stime AS time, cell_availability FROM core_ran_kpi ORDER BY stime ASC;",
+          "refId": "A"
+        }
+      ],
+      "title": "RAN Cell Availability (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "percent"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+      "id": 4,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT stime AS time, erab_setup_success_rate, rrc_connection_setup_success_rate FROM core_ran_kpi ORDER BY stime ASC;",
+          "refId": "A"
+        }
+      ],
+      "title": "ERAB & RRC Setup Success Rates (%)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 17 },
+      "id": 102,
+      "title": "Core Data Throughput & IMS Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "drawStyle": "line", "lineInterpolation": "smooth" },
+          "unit": "Mbits"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
+      "id": 5,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT stime AS time, total_data_throughput_mbps FROM core_cmg_kpi ORDER BY stime ASC;",
+          "refId": "A"
+        }
+      ],
+      "title": "CMG Core Data Throughput (Mbps)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "custom": { "drawStyle": "line" } } },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
+      "id": 6,
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT stime AS time, registered_users FROM core_ims_kpi ORDER BY stime ASC;",
+          "refId": "A"
+        }
+      ],
+      "title": "IMS Registered Active Users",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 26 },
+      "id": 103,
+      "title": "Active Network Alarms",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+      "fieldConfig": { "defaults": { "custom": {} } },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 27 },
+      "id": 7,
+      "options": { "showTableHeader": true },
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "PostgreSQL" },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT event_time AS time, alarm_id, perceived_severity, cleared, mo_identifier, specific_problem FROM core_alarms ORDER BY event_time DESC LIMIT 20;",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Network Alarms",
+      "type": "table"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["aramco", "etl", "telecom"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Aramco Network Monitoring & ETL Dashboard",
+  "uid": "aramco-network-overview",
+  "version": 1
+}

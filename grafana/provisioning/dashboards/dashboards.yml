@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'Aramco Dashboards'
+    orgId: 1
+    folder: 'Aramco Network Monitoring'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
