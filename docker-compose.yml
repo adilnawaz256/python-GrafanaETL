@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: aramco_postgres
+    environment:
+      POSTGRES_DB: aramco_etl
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/10_schema.sql
+      - ./sql/indexes.sql:/docker-entrypoint-initdb.d/20_indexes.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aramco_etl"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  etl_app:
+    build: .
+    container_name: aramco_etl_app
+    environment:
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: aramco_etl
+      DATABASE_USER: postgres
+      DATABASE_PASSWORD: postgrespassword
+      INPUT_FOLDER: ./data/input
+      PROCESSING_FOLDER: ./data/processing
+      PROCESSED_FOLDER: ./data/processed
+      FAILED_FOLDER: ./data/failed
+      ARCHIVE_FOLDER: ./data/archive
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./data:/app/data
+
+volumes:
+  postgres_data:
