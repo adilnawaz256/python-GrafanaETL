@@ -5,17 +5,17 @@ services:
     image: postgres:15-alpine
     container_name: aramco_postgres
     environment:
-      POSTGRES_DB: aramco_etl
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: ${DATABASE_NAME:-aramco_etl}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgrespassword}
     ports:
-      - "5432:5432"
+      - "${DATABASE_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/10_schema.sql
       - ./sql/indexes.sql:/docker-entrypoint-initdb.d/20_indexes.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d aramco_etl"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-aramco_etl}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,18 +23,10 @@ services:
   etl_app:
     build: .
     container_name: aramco_etl_app
+    env_file:
+      - .env
     environment:
       DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_NAME: aramco_etl
-      DATABASE_USER: postgres
-      DATABASE_PASSWORD: postgrespassword
-      INPUT_FOLDER: ./data/input
-      PROCESSING_FOLDER: ./data/processing
-      PROCESSED_FOLDER: ./data/processed
-      FAILED_FOLDER: ./data/failed
-      ARCHIVE_FOLDER: ./data/archive
-      LOG_LEVEL: INFO
     depends_on:
       postgres:
         condition: service_healthy
@@ -45,10 +37,10 @@ services:
     image: grafana/grafana:latest
     container_name: aramco_grafana
     ports:
-      - "3000:3000"
+      - "${GRAFANA_PORT:-3000}:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=adminpassword
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-adminpassword}
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
@@ -59,4 +51,5 @@ services:
 volumes:
   postgres_data:
   grafana_data:
+
 
