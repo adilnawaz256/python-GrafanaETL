@@ -23,10 +23,12 @@ from app.loaders.alarm_loader import AlarmLoader
 from app.loaders.smsc_loader import SMSCLoader
 from app.loaders.transport_loader import TransportLoader
 from app.loaders.ticket_loader import TicketLoader
+from app.ingestion.sftp_downloader import download_files_from_sftp
 from app.etl.batch_manager import BatchManager
 from app.alerts.notifier import Notifier
 
 logger = logging.getLogger("aramco_etl.pipeline")
+
 
 TRANSFORMERS = {
     "RAN": RANTransformer,
@@ -252,10 +254,15 @@ def process_single_file(file_info: FileInfo, conn=None) -> bool:
 
 def run_pipeline(check_db: bool = True) -> int:
     """
-    Main ETL sweep. Finds new files and processes each independently.
+    Main ETL sweep. Downloads files from SFTP (if enabled), finds new files, and processes each independently.
     Returns the total number of processed files.
     """
+    # Optional SFTP Ingestion Step
+    if settings.SFTP_ENABLED:
+        download_files_from_sftp()
+
     files = discover_new_files(check_db=check_db)
+
     if not files:
         logger.info("No new files to process.")
         return 0

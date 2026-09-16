@@ -35,4 +35,14 @@ class Settings:
     MAX_RETRIES: int = int(os.getenv("MAX_RETRIES", "3"))
     RETRY_DELAY_SECONDS: int = int(os.getenv("RETRY_DELAY_SECONDS", "5"))
 
+    SFTP_ENABLED: bool = os.getenv("SFTP_ENABLED", "false").lower() in ("true", "1", "t", "yes")
+    SFTP_HOST: str = os.getenv("SFTP_HOST", "")
+    SFTP_PORT: int = int(os.getenv("SFTP_PORT", "22"))
+    SFTP_USERNAME: str = os.getenv("SFTP_USERNAME", "")
+    SFTP_PASSWORD: str = os.getenv("SFTP_PASSWORD", "")
+    SFTP_KEY_FILE: str = os.getenv("SFTP_KEY_FILE", "")
+    SFTP_REMOTE_DIR: str = os.getenv("SFTP_REMOTE_DIR", "/")
+    SFTP_DELETE_AFTER_DOWNLOAD: bool = os.getenv("SFTP_DELETE_AFTER_DOWNLOAD", "false").lower() in ("true", "1", "t", "yes")
+
 settings = Settings()
+
