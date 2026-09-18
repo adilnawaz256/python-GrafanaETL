@@ -40,6 +40,8 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-adminpassword}
       - GF_SERVER_ROOT_URL=https://grafana.wisualyst.com/
+      - GF_INSTALL_PLUGINS=marcusolsson-dynamictext-panel,volkovlabs-echarts-panel
+      - GF_PLUGINS_ALLOW_UNUNSIGNED_PLUGINS=marcusolsson-dynamictext-panel,volkovlabs-echarts-panel
 
     volumes:
       - grafana_data:/var/lib/grafana
