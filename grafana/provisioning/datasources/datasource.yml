@@ -18,22 +18,6 @@ datasources:
       connMaxLifetime: 14400
     isDefault: true
 
-  - name: cfurv3bxbo8hsa
-    uid: cfurv3bxbo8hsa
-    type: postgres
-    access: proxy
-    url: postgres:5432
-    user: postgres
-    secureJsonData:
-      password: postgrespassword
-    database: aramco_etl
-    jsonData:
-      sslmode: disable
-      postgresVersion: 1500
-      maxOpenConns: 100
-      maxIdleConns: 100
-      connMaxLifetime: 14400
-
   - name: PCC52D03280B7034C
     uid: PCC52D03280B7034C
     type: postgres
