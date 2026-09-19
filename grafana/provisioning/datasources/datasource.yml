@@ -11,6 +11,7 @@ datasources:
       password: postgrespassword
     database: aramco_etl
     jsonData:
+      database: aramco_etl
       sslmode: disable
       postgresVersion: 1500
       maxOpenConns: 100
@@ -28,6 +29,7 @@ datasources:
       password: postgrespassword
     database: aramco_etl
     jsonData:
+      database: aramco_etl
       sslmode: disable
       postgresVersion: 1500
       maxOpenConns: 100
