@@ -4,15 +4,15 @@ class SMSCLoader(BaseLoader):
     table_name = "core_smsc_kpi"
     conflict_columns = ["stime", "hostname_smsc"]
     update_columns = [
-        "smsc_mt_success_rate",
-        "sp_mt_fail_number",
-        "sp_mt_success_rate",
-        "current_speed_mt",
-        "current_speed_mo",
-        "used_cb_resources",
-        "total_cb_resources",
-        "failure_subscriber_error",
-        "failure_network",
-        "memory_usage",
+        "smsc_mt_success_rate_[%]",
+        "sp_mt_fail_number_[.]",
+        "sp_mt_success_rate_[%]",
+        "current_speed_mt_[.]",
+        "current_speed_mo_[.]",
+        "used_cb_resources_[.]",
+        "total_cb_resources_[.]",
+        "failure_subscriber_error_[.]",
+        "failure_network_[.]",
+        "memory_usage_[.]",
         "source_batch_id"
     ]

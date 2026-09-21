@@ -1,5 +1,19 @@
 -- Aramco ETL PostgreSQL Database Schema
 
+-- Drop previous tables if they exist to force clean fresh recreation
+DROP TABLE IF EXISTS core_smsc_kpi CASCADE;
+DROP TABLE IF EXISTS core_ran_kpi CASCADE;
+DROP TABLE IF EXISTS core_cmg_kpi CASCADE;
+DROP TABLE IF EXISTS core_cmm_kpi CASCADE;
+DROP TABLE IF EXISTS core_ims_kpi CASCADE;
+DROP TABLE IF EXISTS core_transport_kpi CASCADE;
+DROP TABLE IF EXISTS core_alarms CASCADE;
+DROP TABLE IF EXISTS core_trouble_tickets CASCADE;
+DROP TABLE IF EXISTS raw_source_records CASCADE;
+DROP TABLE IF EXISTS etl_pipeline_runs CASCADE;
+DROP TABLE IF EXISTS etl_file_errors CASCADE;
+DROP TABLE IF EXISTS etl_file_batches CASCADE;
+
 -- 1. ETL Management Tables
 
 CREATE TABLE IF NOT EXISTS etl_file_batches (
@@ -117,7 +131,7 @@ CREATE TABLE IF NOT EXISTS core_cmg_kpi (
     stime TIMESTAMP NOT NULL,
     cmg VARCHAR(255) NOT NULL,
     total_data_throughput_mbps DOUBLE PRECISION NULL,
-    s11_create_session_success_ratio DOUBLE PRECISION NULL,
+    "s11_create_session_success_ratio_[%]" DOUBLE PRECISION NULL,
     total_data_volume_mb DOUBLE PRECISION NULL,
     source_batch_id BIGINT NULL REFERENCES etl_file_batches(batch_id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -129,9 +143,9 @@ CREATE TABLE IF NOT EXISTS core_cmm_kpi (
     cmm_pk BIGSERIAL PRIMARY KEY,
     stime TIMESTAMP NOT NULL,
     cmm VARCHAR(255) NOT NULL,
-    eps_attach_success_ratio DOUBLE PRECISION NULL,
-    eps_service_request_success_ratio DOUBLE PRECISION NULL,
-    eps_ps_paging_success_ratio DOUBLE PRECISION NULL,
+    "eps_attach_success_ratio_[%]" DOUBLE PRECISION NULL,
+    "eps_service_request_success_ratio_[%]" DOUBLE PRECISION NULL,
+    "eps_ps_paging_success_ratio_[%]" DOUBLE PRECISION NULL,
     source_batch_id BIGINT NULL REFERENCES etl_file_batches(batch_id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -142,18 +156,18 @@ CREATE TABLE IF NOT EXISTS core_ran_kpi (
     ran_pk BIGSERIAL PRIMARY KEY,
     stime TIMESTAMP NOT NULL,
     d1_plmn VARCHAR(255) NOT NULL,
-    s1_ho_hosr DOUBLE PRECISION NULL,
-    x2_ho_hosr DOUBLE PRECISION NULL,
-    x2_ho_attempts DOUBLE PRECISION NULL,
-    average_rssi_pusch DOUBLE PRECISION NULL,
-    erab_setup_success_rate DOUBLE PRECISION NULL,
-    s1_ho_attempts DOUBLE PRECISION NULL,
-    cell_availability DOUBLE PRECISION NULL,
-    erab_setup_attempts DOUBLE PRECISION NULL,
-    rrc_connection_setup_success_rate DOUBLE PRECISION NULL,
-    resource_block_utilization_ul DOUBLE PRECISION NULL,
-    resource_block_utilization_dl DOUBLE PRECISION NULL,
-    erab_drop_rate DOUBLE PRECISION NULL,
+    "s1_ho_hosr_[%]" DOUBLE PRECISION NULL,
+    "x2_ho_hosr_[%]" DOUBLE PRECISION NULL,
+    "x2_ho_attempts_[.]" DOUBLE PRECISION NULL,
+    "average_rssi_pusch_[.]" DOUBLE PRECISION NULL,
+    "erab_setup_success_rate_[%]" DOUBLE PRECISION NULL,
+    "s1_ho_attempts_[.]" DOUBLE PRECISION NULL,
+    "cell_availability_[%]" DOUBLE PRECISION NULL,
+    "erab_setup_attempts_[.]" DOUBLE PRECISION NULL,
+    "rrc_connection_setup_success_rate_[%]" DOUBLE PRECISION NULL,
+    "resource_block_utilization_ul_[.]" DOUBLE PRECISION NULL,
+    "resource_block_utilization_dl_[.]" DOUBLE PRECISION NULL,
+    "erab_drop_rate_[%]" DOUBLE PRECISION NULL,
     source_batch_id BIGINT NULL REFERENCES etl_file_batches(batch_id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -188,16 +202,16 @@ CREATE TABLE IF NOT EXISTS core_smsc_kpi (
     smsc_pk BIGSERIAL PRIMARY KEY,
     stime TIMESTAMP NOT NULL,
     hostname_smsc VARCHAR(255) NOT NULL,
-    smsc_mt_success_rate DOUBLE PRECISION NULL,
-    sp_mt_fail_number DOUBLE PRECISION NULL,
-    sp_mt_success_rate DOUBLE PRECISION NULL,
-    current_speed_mt DOUBLE PRECISION NULL,
-    current_speed_mo DOUBLE PRECISION NULL,
-    used_cb_resources DOUBLE PRECISION NULL,
-    total_cb_resources DOUBLE PRECISION NULL,
-    failure_subscriber_error DOUBLE PRECISION NULL,
-    failure_network DOUBLE PRECISION NULL,
-    memory_usage DOUBLE PRECISION NULL,
+    "smsc_mt_success_rate_[%]" DOUBLE PRECISION NULL,
+    "sp_mt_fail_number_[.]" DOUBLE PRECISION NULL,
+    "sp_mt_success_rate_[%]" DOUBLE PRECISION NULL,
+    "current_speed_mt_[.]" DOUBLE PRECISION NULL,
+    "current_speed_mo_[.]" DOUBLE PRECISION NULL,
+    "used_cb_resources_[.]" DOUBLE PRECISION NULL,
+    "total_cb_resources_[.]" DOUBLE PRECISION NULL,
+    "failure_subscriber_error_[.]" DOUBLE PRECISION NULL,
+    "failure_network_[.]" DOUBLE PRECISION NULL,
+    "memory_usage_[.]" DOUBLE PRECISION NULL,
     source_batch_id BIGINT NULL REFERENCES etl_file_batches(batch_id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -209,8 +223,8 @@ CREATE TABLE IF NOT EXISTS core_transport_kpi (
     stime TIMESTAMP NOT NULL,
     device_name VARCHAR(255) NOT NULL,
     n_interface VARCHAR(255) NOT NULL,
-    utilization_out DOUBLE PRECISION NULL,
-    utilization_in DOUBLE PRECISION NULL,
+    "utilization_out_[%]" DOUBLE PRECISION NULL,
+    "utilization_in_[%]" DOUBLE PRECISION NULL,
     source_batch_id BIGINT NULL REFERENCES etl_file_batches(batch_id) ON DELETE SET NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),

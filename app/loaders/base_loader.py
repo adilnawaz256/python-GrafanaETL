@@ -21,12 +21,12 @@ class BaseLoader:
             return 0, 0
 
         columns = list(records[0].keys())
-        cols_str = ", ".join(columns)
-        conflict_str = ", ".join(cls.conflict_columns)
+        cols_str = ", ".join(f'"{c}"' for c in columns)
+        conflict_str = ", ".join(f'"{c}"' for c in cls.conflict_columns)
 
         # Build ON CONFLICT DO UPDATE clause
         # EXCLUDED refers to the proposed row in PostgreSQL UPSERT
-        update_clauses = [f"{col} = EXCLUDED.{col}" for col in cls.update_columns if col not in cls.conflict_columns]
+        update_clauses = [f'"{col}" = EXCLUDED."{col}"' for col in cls.update_columns if col not in cls.conflict_columns]
         update_clauses.append("updated_at = NOW()")
         update_str = ", ".join(update_clauses)
 

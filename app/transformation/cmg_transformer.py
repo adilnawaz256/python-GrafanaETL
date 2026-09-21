@@ -14,7 +14,7 @@ class CMGTransformer(BaseTransformer):
             "stime": stime,
             "cmg": cmg,
             "total_data_throughput_mbps": cls.to_float(row.get("Total Data Throughput Raw  [Mb/s]") or row.get("Total Data Throughput Raw [Mb/s]")),
-            "s11_create_session_success_ratio": cls.to_float(row.get("S11 Create Session received success ratio Raw  [%]") or row.get("S11 Create Session received success ratio Raw [%]")),
+            "s11_create_session_success_ratio_[%]": cls.to_float(row.get("S11 Create Session received success ratio Raw  [%]") or row.get("S11 Create Session received success ratio Raw [%]")),
             "total_data_volume_mb": cls.to_float(row.get("Total data volume Raw  [MB]") or row.get("Total data volume Raw [MB]")),
             "source_batch_id": batch_id
         }

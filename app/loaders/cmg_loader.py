@@ -5,7 +5,7 @@ class CMGLoader(BaseLoader):
     conflict_columns = ["stime", "cmg"]
     update_columns = [
         "total_data_throughput_mbps",
-        "s11_create_session_success_ratio",
+        "s11_create_session_success_ratio_[%]",
         "total_data_volume_mb",
         "source_batch_id"
     ]
