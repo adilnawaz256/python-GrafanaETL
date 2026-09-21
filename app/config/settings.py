@@ -21,6 +21,8 @@ class Settings:
     ARCHIVE_FOLDER: str = os.getenv("ARCHIVE_FOLDER", "./data/archive")
 
     CRON_SCHEDULE: str = os.getenv("CRON_SCHEDULE", "*/15 * * * *")
+    RUN_INTERVAL_SECONDS: int = int(os.getenv("RUN_INTERVAL_SECONDS", "900"))
+    SINGLE_RUN: bool = os.getenv("SINGLE_RUN", "false").lower() in ("true", "1", "t", "yes")
     TIMEZONE: str = os.getenv("TIMEZONE", "UTC")
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     BATCH_SIZE: int = int(os.getenv("BATCH_SIZE", "1000"))
@@ -45,4 +47,3 @@ class Settings:
     SFTP_DELETE_AFTER_DOWNLOAD: bool = os.getenv("SFTP_DELETE_AFTER_DOWNLOAD", "false").lower() in ("true", "1", "t", "yes")
 
 settings = Settings()
-
