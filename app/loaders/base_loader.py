@@ -21,12 +21,12 @@ class BaseLoader:
             return 0, 0
 
         columns = list(records[0].keys())
-        cols_str = ", ".join(f'"{c}"' for c in columns)
-        conflict_str = ", ".join(f'"{c}"' for c in cls.conflict_columns)
+        cols_str = ", ".join(f'"{c}"' for c in columns).replace("%", "%%")
+        conflict_str = ", ".join(f'"{c}"' for c in cls.conflict_columns).replace("%", "%%")
 
         # Build ON CONFLICT DO UPDATE clause
         # EXCLUDED refers to the proposed row in PostgreSQL UPSERT
-        update_clauses = [f'"{col}" = EXCLUDED."{col}"' for col in cls.update_columns if col not in cls.conflict_columns]
+        update_clauses = [f'"{col}" = EXCLUDED."{col}"'.replace("%", "%%") for col in cls.update_columns if col not in cls.conflict_columns]
         update_clauses.append("updated_at = NOW()")
         update_str = ", ".join(update_clauses)
 
@@ -42,8 +42,6 @@ class BaseLoader:
         def _exec(c):
             with c.cursor() as cur:
                 psycopg2.extras.execute_values(cur, query, args_list)
-                # In PostgreSQL execute_values does not return detailed row counts easily,
-                # but returns cur.rowcount total rows affected (inserted + updated)
                 total_affected = cur.rowcount
                 return total_affected, 0
 

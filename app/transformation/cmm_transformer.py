@@ -13,8 +13,8 @@ class CMMTransformer(BaseTransformer):
         return {
             "stime": stime,
             "cmm": cmm,
-            "eps_attach_success_ratio": cls.to_float(row.get('EPS attach "technical" success ratio Raw  [%]') or row.get('EPS attach "technical" success ratio Raw [%]')),
-            "eps_service_request_success_ratio": cls.to_float(row.get("EPS Service Request success ratio Raw  [%]") or row.get("EPS Service Request success ratio Raw [%]")),
-            "eps_ps_paging_success_ratio": cls.to_float(row.get("EPS PS Paging success ratio Raw  [%]") or row.get("EPS PS Paging success ratio Raw [%]")),
+            "eps_attach_success_ratio_[%]": cls.to_float(row.get('EPS attach "technical" success ratio Raw  [%]') or row.get('EPS attach "technical" success ratio Raw [%]')),
+            "eps_service_request_success_ratio_[%]": cls.to_float(row.get("EPS Service Request success ratio Raw  [%]") or row.get("EPS Service Request success ratio Raw [%]")),
+            "eps_ps_paging_success_ratio_[%]": cls.to_float(row.get("EPS PS Paging success ratio Raw  [%]") or row.get("EPS PS Paging success ratio Raw [%]")),
             "source_batch_id": batch_id
         }
