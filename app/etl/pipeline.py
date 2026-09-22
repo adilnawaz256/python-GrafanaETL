@@ -257,6 +257,13 @@ def run_pipeline(check_db: bool = True) -> int:
     Main ETL sweep. Downloads files from SFTP (if enabled), finds new files, and processes each independently.
     Returns the total number of processed files.
     """
+    run_entry = None
+    try:
+        from app.db.repositories import PipelineRunRepository
+        run_entry = PipelineRunRepository.create_run("aramco_etl_sweep")
+    except Exception as run_err:
+        logger.debug(f"Could not record pipeline run start: {run_err}")
+
     # Optional SFTP Ingestion Step
     if settings.SFTP_ENABLED:
         download_files_from_sftp()
@@ -265,6 +272,11 @@ def run_pipeline(check_db: bool = True) -> int:
 
     if not files:
         logger.info("No new files to process.")
+        if run_entry and run_entry.run_id:
+            try:
+                PipelineRunRepository.finish_run(run_entry.run_id, status="SUCCESS", records_read=0, records_inserted=0)
+            except Exception:
+                pass
         return 0
 
     processed_count = 0
@@ -276,4 +288,10 @@ def run_pipeline(check_db: bool = True) -> int:
             logger.error(f"Isolated file processing error for {f_info.file_name}: {e}")
 
     logger.info(f"Completed pipeline run. Processed {processed_count}/{len(files)} files.")
+    if run_entry and run_entry.run_id:
+        try:
+            PipelineRunRepository.finish_run(run_entry.run_id, status="SUCCESS", records_read=len(files), records_inserted=processed_count)
+        except Exception:
+            pass
+
     return processed_count

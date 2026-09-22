@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime
 from typing import Optional, List, Dict, Any
 import psycopg2.extras
 from app.db.models import FileBatch, FileError, PipelineRun, RawRecord
@@ -161,6 +162,48 @@ class RawRecordRepository:
         def _exec(c):
             with c.cursor() as cur:
                 psycopg2.extras.execute_values(cur, query, args_list)
+
+        if conn:
+            _exec(conn)
+        else:
+            with get_db_connection() as c:
+                _exec(c)
+
+class PipelineRunRepository:
+    @staticmethod
+    def create_run(pipeline_name: str = "aramco_etl_sweep", conn=None) -> PipelineRun:
+        run = PipelineRun(pipeline_name=pipeline_name, started_at=datetime.utcnow(), status="RUNNING")
+        query = """
+            INSERT INTO etl_pipeline_runs (pipeline_name, started_at, status)
+            VALUES (%s, %s, %s)
+            RETURNING run_id;
+        """
+        def _exec(c):
+            with c.cursor() as cur:
+                cur.execute(query, (run.pipeline_name, run.started_at, run.status))
+                run.run_id = cur.fetchone()[0]
+                return run
+
+        if conn:
+            return _exec(conn)
+        with get_db_connection() as c:
+            return _exec(c)
+
+    @staticmethod
+    def finish_run(run_id: int, status: str, records_read: int = 0, records_inserted: int = 0, error_message: Optional[str] = None, conn=None):
+        query = """
+            UPDATE etl_pipeline_runs
+            SET status = %s,
+                completed_at = %s,
+                records_read = %s,
+                records_inserted = %s,
+                error_message = %s
+            WHERE run_id = %s;
+        """
+        completed_at = datetime.utcnow()
+        def _exec(c):
+            with c.cursor() as cur:
+                cur.execute(query, (status, completed_at, records_read, records_inserted, error_message, run_id))
 
         if conn:
             _exec(conn)
