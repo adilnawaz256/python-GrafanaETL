@@ -45,6 +45,10 @@ def discover_new_files(check_db: bool = True) -> List[FileInfo]:
 
     for entry in input_dir.iterdir():
         if entry.is_file() and entry.suffix.lower() in supported_exts:
+            if "KEYS" in entry.name.upper() or "DATA_P_KEYS" in entry.name.upper():
+                logger.info(f"Skipping reference key mapping metadata file '{entry.name}'")
+                move_file(str(entry), settings.PROCESSED_FOLDER)
+                continue
             try:
                 info = FileInfo(str(entry))
                 # Check DB for duplicate delivery

@@ -37,7 +37,7 @@ def detect_source_type(filename: str, headers: List[str]) -> str:
         return "ALARMS"
     elif "SD" in fname_upper or "TICKET" in fname_upper:
         return "TICKETS"
-    elif "MCX" in fname_upper or "MCPTT" in fname_upper or "DATA_P" in fname_upper:
+    elif "MCX" in fname_upper or "MCPTT" in fname_upper:
         return "MCX"
 
     # Fallback to header inspection
