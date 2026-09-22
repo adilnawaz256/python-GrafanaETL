@@ -1,6 +1,7 @@
 -- Aramco ETL PostgreSQL Database Schema
 
 -- Drop previous tables if they exist to force clean fresh recreation
+DROP TABLE IF EXISTS core_mcx_kpi CASCADE;
 DROP TABLE IF EXISTS core_smsc_kpi CASCADE;
 DROP TABLE IF EXISTS core_ran_kpi CASCADE;
 DROP TABLE IF EXISTS core_cmg_kpi CASCADE;
@@ -229,4 +230,23 @@ CREATE TABLE IF NOT EXISTS core_transport_kpi (
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT uq_core_transport_kpi UNIQUE (stime, device_name, n_interface)
+);
+
+CREATE TABLE IF NOT EXISTS core_mcx_kpi (
+    mcx_pk BIGSERIAL PRIMARY KEY,
+    stime TIMESTAMP NOT NULL,
+    centreon_network VARCHAR(255) NOT NULL,
+    "kpi1_3gpp_mcptt_access_time_avg_[.]" DOUBLE PRECISION NULL,
+    "kpi1_3gpp_mcptt_access_time_min_[.]" DOUBLE PRECISION NULL,
+    "kpi1_3gpp_mcptt_access_time_max_[.]" DOUBLE PRECISION NULL,
+    "kpi3_3gpp_mouth_to_ear_latency_avg_[.]" DOUBLE PRECISION NULL,
+    "kpi3_3gpp_mouth_to_ear_latency_min_[.]" DOUBLE PRECISION NULL,
+    "kpi2_3gpp_mcptt_access_time_end_to_end_max_[.]" DOUBLE PRECISION NULL,
+    "kpi3_3gpp_mouth_to_ear_latency_max_[.]" DOUBLE PRECISION NULL,
+    "kpi2_3gpp_mcptt_access_time_end_to_end_avg_[.]" DOUBLE PRECISION NULL,
+    "kpi2_3gpp_mcptt_access_time_end_to_end_min_[.]" DOUBLE PRECISION NULL,
+    source_batch_id BIGINT NULL REFERENCES etl_file_batches(batch_id) ON DELETE SET NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_core_mcx_kpi UNIQUE (stime, centreon_network)
 );

@@ -45,3 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_core_transport_stime ON core_transport_kpi(stime)
 CREATE INDEX IF NOT EXISTS idx_core_transport_device ON core_transport_kpi(device_name);
 CREATE INDEX IF NOT EXISTS idx_core_transport_interface ON core_transport_kpi(n_interface);
 CREATE INDEX IF NOT EXISTS idx_core_transport_batch_id ON core_transport_kpi(source_batch_id);
+
+CREATE INDEX IF NOT EXISTS idx_core_mcx_stime ON core_mcx_kpi(stime);
+CREATE INDEX IF NOT EXISTS idx_core_mcx_network ON core_mcx_kpi(centreon_network);
+CREATE INDEX IF NOT EXISTS idx_core_mcx_batch_id ON core_mcx_kpi(source_batch_id);

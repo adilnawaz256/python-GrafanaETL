@@ -12,7 +12,8 @@ EXPECTED_HEADERS: Dict[str, List[str]] = {
     "SMSC": ['STime', 'hostname_smsc'],
     "TRANSPORT": ['STime', 'n_interface'],
     "ALARMS": ['Alarm ID', 'Event Time'],
-    "TICKETS": ['Issue key']
+    "TICKETS": ['Issue key'],
+    "MCX": ['STime', 'centreon_network']
 }
 
 def detect_source_type(filename: str, headers: List[str]) -> str:
@@ -36,6 +37,8 @@ def detect_source_type(filename: str, headers: List[str]) -> str:
         return "ALARMS"
     elif "SD" in fname_upper or "TICKET" in fname_upper:
         return "TICKETS"
+    elif "MCX" in fname_upper or "MCPTT" in fname_upper or "DATA_P" in fname_upper:
+        return "MCX"
 
     # Fallback to header inspection
     h_set = set(headers)
@@ -55,6 +58,8 @@ def detect_source_type(filename: str, headers: List[str]) -> str:
         return "ALARMS"
     elif "Issue key" in h_set:
         return "TICKETS"
+    elif "centreon_network" in h_set or any("mcptt" in str(h).lower() for h in h_set):
+        return "MCX"
 
     return "UNKNOWN"
 

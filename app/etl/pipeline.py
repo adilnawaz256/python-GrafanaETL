@@ -15,6 +15,7 @@ from app.transformation.alarm_transformer import AlarmTransformer
 from app.transformation.smsc_transformer import SMSCTransformer
 from app.transformation.transport_transformer import TransportTransformer
 from app.transformation.ticket_transformer import TicketTransformer
+from app.transformation.mcx_transformer import MCXTransformer
 from app.loaders.ran_loader import RANLoader
 from app.loaders.ims_loader import IMSLoader
 from app.loaders.cmg_loader import CMGLoader
@@ -23,6 +24,7 @@ from app.loaders.alarm_loader import AlarmLoader
 from app.loaders.smsc_loader import SMSCLoader
 from app.loaders.transport_loader import TransportLoader
 from app.loaders.ticket_loader import TicketLoader
+from app.loaders.mcx_loader import MCXLoader
 from app.ingestion.sftp_downloader import download_files_from_sftp
 from app.etl.batch_manager import BatchManager
 from app.alerts.notifier import Notifier
@@ -39,6 +41,7 @@ TRANSFORMERS = {
     "SMSC": SMSCTransformer,
     "TRANSPORT": TransportTransformer,
     "TICKETS": TicketTransformer,
+    "MCX": MCXTransformer,
 }
 
 LOADERS = {
@@ -50,6 +53,7 @@ LOADERS = {
     "SMSC": SMSCLoader,
     "TRANSPORT": TransportLoader,
     "TICKETS": TicketLoader,
+    "MCX": MCXLoader,
 }
 
 def process_single_file(file_info: FileInfo, conn=None) -> bool:
