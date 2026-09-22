@@ -35,25 +35,32 @@ def download_files_from_sftp() -> List[str]:
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
-        logger.info(f"Connecting to SFTP server {settings.SFTP_HOST}:{settings.SFTP_PORT} as '{settings.SFTP_USERNAME}'...")
+        host = settings.SFTP_HOST.strip()
+        username = settings.SFTP_USERNAME.strip()
+        password = settings.SFTP_PASSWORD.strip() if settings.SFTP_PASSWORD else ""
+
+        logger.info(f"Connecting to SFTP server {host}:{settings.SFTP_PORT} as '{username}'...")
         
         connect_kwargs = {
-            "hostname": settings.SFTP_HOST,
+            "hostname": host,
             "port": settings.SFTP_PORT,
-            "username": settings.SFTP_USERNAME,
+            "username": username,
             "timeout": 30,
         }
 
-        if settings.SFTP_KEY_FILE and os.path.exists(settings.SFTP_KEY_FILE):
-            connect_kwargs["key_filename"] = settings.SFTP_KEY_FILE
-        elif settings.SFTP_PASSWORD:
-            connect_kwargs["password"] = settings.SFTP_PASSWORD
+        if settings.SFTP_KEY_FILE and os.path.exists(settings.SFTP_KEY_FILE.strip()):
+            connect_kwargs["key_filename"] = settings.SFTP_KEY_FILE.strip()
+        elif password:
+            connect_kwargs["password"] = password
 
         ssh.connect(**connect_kwargs)
         sftp = ssh.open_sftp()
 
-        remote_dir = settings.SFTP_REMOTE_DIR or "/"
-        sftp.chdir(remote_dir)
+        remote_dir = settings.SFTP_REMOTE_DIR.strip() if settings.SFTP_REMOTE_DIR else "."
+        try:
+            sftp.chdir(remote_dir)
+        except Exception:
+            pass
         file_list = sftp.listdir()
 
         logger.info(f"Scanning remote SFTP directory '{remote_dir}'. Found {len(file_list)} remote item(s).")
