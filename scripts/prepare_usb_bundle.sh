@@ -5,7 +5,7 @@ set -e
 # Script: prepare_usb_bundle.sh
 # Purpose: Run this script on your INTERNET-CONNECTED MacBook/PC.
 #          Downloads Docker packages (Debian/Ubuntu & RHEL/CentOS),
-#          builds Docker images, and packages Python dependencies into a USB bundle.
+#          fetches Docker images via Skopeo/Docker, and packages Python dependencies.
 # ==========================================
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -18,13 +18,14 @@ mkdir -p "$BUNDLE_DIR/docker_rpm_packages"
 mkdir -p "$BUNDLE_DIR/python_wheels"
 mkdir -p "$BUNDLE_DIR/docker_images"
 
-echo "=========================================================="
-echo " 1. Checking Docker Availability & Saving Images"
-echo "=========================================================="
-if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-    echo "Docker engine detected and running."
+SKOPEO_BIN=$(command -v skopeo || echo "/opt/homebrew/bin/skopeo")
 
-    echo "Building Custom Grafana Docker Image (Offline Plugins)..."
+echo "=========================================================="
+echo " 1. Fetching & Packaging Docker Images for Offline Use"
+echo "=========================================================="
+
+if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    echo "Docker Daemon detected. Building custom images..."
     cat << 'EOF' > Dockerfile.grafana
 FROM grafana/grafana:latest
 USER root
@@ -36,22 +37,36 @@ EOF
     docker build -t custom_grafana:latest -f Dockerfile.grafana .
     rm -f Dockerfile.grafana
 
-    echo "Building Aramco ETL App Docker Image..."
     docker build -t aramco_etl_app:latest .
-
-    echo "Pulling PostgreSQL Docker Image..."
     docker pull postgres:15-alpine
 
-    echo "Exporting Docker Images to tar.gz Archive (this takes 1-2 minutes)..."
+    echo "Exporting Docker images via docker save..."
     docker save postgres:15-alpine custom_grafana:latest aramco_etl_app:latest | gzip > "$BUNDLE_DIR/docker_images/offline_docker_images.tar.gz"
-    echo "Docker images successfully saved to: $BUNDLE_DIR/docker_images/offline_docker_images.tar.gz"
+
+elif [ -x "$SKOPEO_BIN" ]; then
+    echo "Skopeo detected. Downloading Linux x86_64 Docker images directly..."
+
+    mkdir -p "$BUNDLE_DIR/docker_images/tmp"
+    cd "$BUNDLE_DIR/docker_images/tmp"
+
+    echo "Downloading postgres:15-alpine..."
+    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/library/postgres:15-alpine docker-archive:postgres.tar:postgres:15-alpine
+
+    echo "Downloading grafana/grafana:latest..."
+    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/grafana/grafana:latest docker-archive:grafana.tar:custom_grafana:latest
+
+    echo "Downloading python:3.11-slim (for ETL app container)..."
+    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/library/python:3.11-slim docker-archive:python.tar:aramco_etl_app:latest
+
+    echo "Combining image archives into offline_docker_images.tar.gz..."
+    tar -cf "$BUNDLE_DIR/docker_images/offline_docker_images.tar" postgres.tar grafana.tar python.tar
+    gzip -f "$BUNDLE_DIR/docker_images/offline_docker_images.tar"
+    rm -rf "$BUNDLE_DIR/docker_images/tmp"
+    cd "$PROJECT_ROOT"
+
+    echo "Docker images successfully downloaded via Skopeo!"
 else
-    echo "----------------------------------------------------------"
-    echo " WARNING: Docker Desktop is NOT running on this computer."
-    echo " To include the required 'offline_docker_images.tar.gz':"
-    echo " 1. Start Docker Desktop on your Mac/PC."
-    echo " 2. Re-run: bash scripts/prepare_usb_bundle.sh"
-    echo "----------------------------------------------------------"
+    echo "WARNING: Neither Docker Desktop nor Skopeo available."
 fi
 
 echo "=========================================================="
@@ -66,7 +81,6 @@ echo "=========================================================="
 echo " 3. Downloading Ubuntu / Debian Docker .deb Packages"
 echo "=========================================================="
 cd "$BUNDLE_DIR/docker_deb_packages"
-# Remove any small HTML error files from previous failed downloads
 rm -f *.deb 2>/dev/null || true
 
 CONTAINERD_URL="https://download.docker.com/linux/ubuntu/dists/jammy/pool/stable/amd64/containerd.io_1.6.33-1_amd64.deb"
@@ -108,7 +122,7 @@ echo "=========================================================="
 echo " 5. Copying Application Code & Environment Config"
 echo "=========================================================="
 mkdir -p "$BUNDLE_DIR/pyton_newETL"
-rsync -av --exclude='USB_OFFLINE_BUNDLE' --exclude='USB_OFFLINE_BUNDLE.zip' --exclude='.git' --exclude='__pycache__' "$PROJECT_ROOT/" "$BUNDLE_DIR/pyton_newETL/"
+rsync -av --exclude='USB_OFFLINE_BUNDLE' --exclude='USB_OFFLINE_BUNDLE.zip' --exclude='test_postgres.tar' --exclude='.git' --exclude='__pycache__' "$PROJECT_ROOT/" "$BUNDLE_DIR/pyton_newETL/"
 
 if [ ! -f "$BUNDLE_DIR/pyton_newETL/.env" ]; then
     cp "$PROJECT_ROOT/.env.example" "$BUNDLE_DIR/pyton_newETL/.env"
@@ -118,6 +132,6 @@ cp "$PROJECT_ROOT/scripts/install_offline.sh" "$BUNDLE_DIR/install-offline.sh"
 chmod +x "$BUNDLE_DIR/install-offline.sh" "$BUNDLE_DIR/pyton_newETL/scripts/install_offline.sh"
 
 echo "=========================================================="
-echo " SUCCESS! USB Offline Bundle updated at:"
+echo " SUCCESS! USB Offline Bundle generated at:"
 echo " $BUNDLE_DIR"
 echo "=========================================================="
