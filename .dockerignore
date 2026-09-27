@@ -1,0 +1,10 @@
+data/
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+grafana_data/
+postgres_data/

@@ -13,13 +13,14 @@ services:
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/10_schema.sql
       - ./sql/indexes.sql:/docker-entrypoint-initdb.d/20_indexes.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -d ${DATABASE_NAME:-aramco_etl}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres} -h 127.0.0.1"]
       interval: 5s
       timeout: 5s
       retries: 5
 
   etl_app:
     build: .
+    image: aramco_etl_app:latest
     container_name: aramco_etl_app
     env_file:
       - .env
@@ -32,16 +33,18 @@ services:
       - ./data:/app/data
 
   grafana:
-    image: grafana/grafana:latest
+    image: custom_grafana:latest
     container_name: aramco_grafana
     ports:
       - "${GRAFANA_PORT:-3000}:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-adminpassword}
-      - GF_SERVER_ROOT_URL=https://grafana.wisualyst.com/
-      - GF_INSTALL_PLUGINS=marcusolsson-dynamictext-panel,volkovlabs-echarts-panel
-      - GF_PLUGINS_ALLOW_UNUNSIGNED_PLUGINS=marcusolsson-dynamictext-panel,volkovlabs-echarts-panel
+      - GF_SERVER_ROOT_URL=${GRAFANA_SERVER_ROOT_URL:-http://localhost:3000/}
+      - GF_SECURITY_COOKIE_SECURE=${GRAFANA_COOKIE_SECURE:-false}
+      - GF_SECURITY_ALLOW_EMBEDDING=true
+      - GF_INSTALL_PLUGINS=${GRAFANA_PLUGINS:-}
+      - GF_PLUGINS_ALLOW_UNUNSIGNED_PLUGINS=${GRAFANA_ALLOW_UNUNSIGNED:-marcusolsson-dynamictext-panel,volkovlabs-echarts-panel}
 
     volumes:
       - grafana_data:/var/lib/grafana

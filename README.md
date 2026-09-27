@@ -1,174 +1,156 @@
-# Aramco Grafana + PostgreSQL ETL System
+# Aramco Network Monitoring ETL & Grafana Platform - Client Deployment Guide
 
-A production-ready, idempotent Python ETL data pipeline for Aramco network monitoring datasets. Designed to safely process overlapping 24-hour rolling window files (Excel & CSV) into clean PostgreSQL tables for Grafana visual dashboards without creating duplicate business records.
-
----
-
-## Key Architecture & Design Highlights
-
-1. **Idempotent Rolling 24-Hour Processing**:
-   - Uses PostgreSQL native `INSERT ... ON CONFLICT (...) DO UPDATE` based on business natural unique keys (`(stime, cscf)`, `(stime, cmg)`, `(stime, d1_plmn)`, `(stime, device_name, n_interface)`, `(alarm_id, event_time)`, `(issue_key)`).
-   - When overlapping 24-hour files arrive, existing records are updated and new records are inserted cleanly.
-
-2. **Fault Isolation Guarantee**:
-   - Each file runs inside an isolated transaction batch.
-   - If batch 14:15 fails (e.g. missing required header columns), the error is logged in `etl_file_errors`, batch status is set to `FAILED`, an alert is triggered, and the pipeline **immediately proceeds to batch 14:30**.
-   - Rolling backfill data in batch 14:30 recovers the 14:15 business records cleanly.
-
-3. **Full Traceability**:
-   - Every file delivery receives a unique `batch_id`.
-   - Original un-transformed source rows are preserved in `raw_source_records` as PostgreSQL `JSONB`.
-   - All Grafana-facing core business records store `source_batch_id` for end-to-end data lineage back to raw source files.
-
-4. **Scheduler Independent**:
-   - Core ETL logic is completely decoupled from cron. Can be triggered via cron, Airflow, ECS scheduled tasks, or EventBridge without modifying any ETL code.
+This document outlines the steps required to configure, deploy, and operate the **Aramco Network Monitoring ETL Data Pipeline & Grafana Visualization Platform** using the provided deployment package.
 
 ---
 
-## Directory Structure
+## 1. Package Contents
+
+The deployment archive contains the following components:
 
 ```
 .
-├── app/
-│   ├── alerts/           # Alerting notifier (webhooks)
-│   ├── config/           # Configuration settings & env loader
-│   ├── db/               # PostgreSQL connection pool & repositories
-│   ├── discovery/        # File scanner, SHA-256 hash & lifecycle manager
-│   ├── etl/              # Batch manager, retry mechanism, main pipeline
-│   ├── ingestion/        # CSV & Excel readers
-│   ├── logging/          # Structured logger
-│   ├── loaders/          # PostgreSQL native UPSERT loaders
-│   ├── transformation/   # Domain transformers (RAN, IMS, CMG, CMM, Alarms, SMSC, Transport, Tickets)
-│   ├── utils/            # Hashing and timestamp extraction utilities
-│   ├── validation/       # Header & row validation engine
-│   └── reprocess.py      # CLI tool for re-executing failed batches/files
+├── docker-compose.yml               # Multi-container orchestration (PostgreSQL, ETL Worker, Grafana)
+├── Dockerfile                       # Python 3.11 ETL Worker container specification
+├── .env.example                     # Environment configuration template
+├── aramco_grafana_dashboard.json    # Complete pre-configured Grafana dashboard JSON
 ├── sql/
-│   ├── schema.sql        # Table DDL definitions & unique constraints
-│   └── indexes.sql       # Performance & Grafana query indexes
-├── scripts/
-│   └── run_etl.sh        # Cron execution script
-├── grafana/
-│   └── queries.sql       # Grafana dashboard SQL queries
-├── tests/                # Automated pytest suite
-├── main.py               # Main pipeline execution entrypoint
-├── Dockerfile            # Container image definition
-├── docker-compose.yml    # Local development stack (PostgreSQL + ETL App)
-├── requirements.txt      # Python dependencies
-├── .env.example          # Environment configuration template
-└── README.md             # System documentation
+│   ├── schema.sql                   # Database table definitions & unique constraints
+│   └── indexes.sql                  # Query performance indexes
+├── app/                             # Core Python ETL application source code
+├── data/                            # File storage directories (input, processing, processed, failed)
+└── grafana/                         # Grafana provisioning & datasource configurations
 ```
 
 ---
 
-## Quick Start & Setup
+## 2. Step 1: Environment Configuration (`.env`)
 
-### 1. Environment Configuration
-
-Copy `.env.example` to `.env` and configure your database and folder settings:
+Before launching the application, create your local environment file by copying `.env.example`:
 
 ```bash
 cp .env.example .env
 ```
 
-Example `.env` settings:
+Open `.env` in a text editor and customize the parameters for your deployment environment:
+
+### Mandatory Fields to Customize:
 
 ```ini
-DATABASE_HOST=localhost
+# =====================================================================
+# 1. Database Credentials
+# =====================================================================
+DATABASE_HOST=postgres
 DATABASE_PORT=5432
 DATABASE_NAME=aramco_etl
 DATABASE_USER=postgres
-DATABASE_PASSWORD=postgrespassword
+DATABASE_PASSWORD=Set_Your_Database_Password_Here
 
-INPUT_FOLDER=./data/input
-PROCESSING_FOLDER=./data/processing
-PROCESSED_FOLDER=./data/processed
-FAILED_FOLDER=./data/failed
-ARCHIVE_FOLDER=./data/archive
+# =====================================================================
+# 2. Grafana Configuration
+# =====================================================================
+GRAFANA_PORT=3000
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=Set_Your_Grafana_Admin_Password_Here
 
-CRON_SCHEDULE=*/15 * * * *
-LOG_LEVEL=INFO
-SUPPORTED_FILE_EXTENSIONS=.xlsx,.xls,.csv
-ALERT_ENABLED=true
-ALERT_WEBHOOK_URL=http://localhost:8080/alerts
-```
+# Set your server IP or domain URL here (e.g., http://192.168.1.100:3000/ or https://grafana.yourdomain.com/)
+GRAFANA_SERVER_ROOT_URL=http://localhost:3000/
 
-### 2. Database Migration
+# =====================================================================
+# 3. ETL Worker Sweep Interval (in seconds)
+# =====================================================================
+# 900 = 15 minutes sweep cycle
+RUN_INTERVAL_SECONDS=900
 
-Run the DDL scripts to create PostgreSQL schemas and indexes:
-
-```bash
-psql -h localhost -U postgres -d aramco_etl -f sql/schema.sql
-psql -h localhost -U postgres -d aramco_etl -f sql/indexes.sql
-```
-
-### 3. Local Execution
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run the pipeline:
-
-```bash
-python main.py
-```
-
-### 4. Running with Docker Compose
-
-To launch the complete local stack (PostgreSQL + ETL application container):
-
-```bash
-docker-compose up -d --build
+# =====================================================================
+# 4. Remote SFTP Credentials (Optional)
+# Set SFTP_ENABLED=true if downloading files from a remote SFTP server
+# =====================================================================
+SFTP_ENABLED=false
+SFTP_HOST=sftp.yourdomain.com
+SFTP_PORT=22
+SFTP_USERNAME=your_sftp_user
+SFTP_PASSWORD=your_sftp_password
+SFTP_REMOTE_DIR=.
+SFTP_DELETE_AFTER_DOWNLOAD=false
 ```
 
 ---
 
-## Scheduling with Cron
+## 3. Step 2: Deploying the Application
 
-Add the execution script to crontab:
+Execute the following commands from the root directory of the unzipped package:
 
 ```bash
-crontab -e
+# Build container images and start services in detached mode
+DOCKER_BUILDKIT=0 docker-compose build etl_app
+docker-compose up -d
 ```
 
-Add entry (runs every 15 minutes):
+### Verify Service Status
 
-```cron
-*/15 * * * * /path/to/pyton_newETL/scripts/run_etl.sh >> /path/to/pyton_newETL/cron.log 2>&1
+Check that all three containers are running:
+
+```bash
+docker-compose ps
 ```
+
+You should see:
+* `aramco_postgres` (Healthy)
+* `aramco_etl_app` (Running)
+* `aramco_grafana` (Running)
 
 ---
 
-## Reprocessing Commands
+## 4. Step 3: Accessing Grafana & Importing Dashboard
 
-Reprocess a batch by `batch_id`:
+1. Open your web browser and navigate to your Grafana URL:
+   * **URL**: `http://<YOUR_SERVER_IP>:3000` (or configured `GRAFANA_SERVER_ROOT_URL`)
+   * **Username**: Value of `GRAFANA_ADMIN_USER` from `.env` (default: `admin`)
+   * **Password**: Value of `GRAFANA_ADMIN_PASSWORD` from `.env`
 
-```bash
-python -m app.reprocess --batch-id 1025
-```
+2. **Database Datasource**:
+   * The PostgreSQL data source (`PostgreSQL`) is automatically provisioned and pre-connected.
 
-Reprocess a specific file by filename:
+3. **Importing the Dashboard**:
+   * In Grafana, click **Dashboards** -> **New** -> **Import**.
+   * Click **Upload dashboard JSON file** and select **`aramco_grafana_dashboard.json`** from the root folder.
+   * Click **Import**.
 
-```bash
-python -m app.reprocess --file RAN_2026-09-15_14-15.xlsx
-```
+All 45 pre-configured panels covering all 9 network domains will automatically populate with live data.
 
 ---
 
-## Automated Test Suite
+## 5. Operations & Maintenance
 
-Run the full pytest suite:
-
+### View Live Pipeline Logs
 ```bash
-python -m pytest -v tests/
+docker logs -f aramco_etl_app
 ```
 
-Test coverage includes:
-- File discovery, hashing, and chronological sorting
-- Duplicate file delivery skipping via content SHA-256 hash
-- Header mismatch detection & error logging
-- Domain transformations & device name extraction
-- PostgreSQL `ON CONFLICT DO UPDATE` UPSERT logic
-- **Critical Failure Isolation Test**: Simulates 14:00 (SUCCESS), 14:15 (FAILED header mismatch), and 14:30 (SUCCESS with overlapping 14:15 data), verifying that missing 14:15 records exist exactly once after 14:30 processing.
+### Restart Services
+```bash
+docker-compose restart
+```
+
+### Stop Application Stack
+```bash
+docker-compose down
+```
+
+### Complete Database Reset (Clear All Data & Re-process Files)
+If you ever need to reset the database and re-process all source files:
+
+```bash
+# 1. Stop stack and delete database volume
+docker-compose down -v
+
+# 2. Reset input files
+mkdir -p data/input data/processed data/failed
+mv data/failed/* data/input/ 2>/dev/null || true
+mv data/processed/* data/input/ 2>/dev/null || true
+
+# 3. Start stack fresh
+DOCKER_BUILDKIT=0 docker-compose build etl_app
+docker-compose up -d
+```

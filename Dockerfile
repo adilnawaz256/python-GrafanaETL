@@ -13,8 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application source code
-COPY . .
+# Copy application source code only (data directory is mounted via volume)
+COPY main.py .
+COPY app/ ./app/
+COPY scripts/ ./scripts/
+COPY sql/ ./sql/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
