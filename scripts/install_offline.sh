@@ -59,10 +59,21 @@ if [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR"/*.tar* 2>/dev/null)" ]; then
     echo "Loading Docker images into daemon..."
     for img in "$IMAGE_DIR"/*.tar*; do
         if [ -f "$img" ]; then
-            echo "Loading image archive: $(basename "$img")..."
-            docker load -i "$img"
+            FILE_NAME=$(basename "$img")
+            FILE_SIZE=$(du -h "$img" | awk '{print $1}')
+            echo "----------------------------------------------------------"
+            echo "Loading image archive: $FILE_NAME ($FILE_SIZE)..."
+            echo "Decompressing layer archives into Docker daemon. Please wait..."
+            
+            if [[ "$img" == *.gz ]]; then
+                gunzip -c "$img" | docker load
+            else
+                docker load -i "$img"
+            fi
+            echo "✓ Successfully loaded $FILE_NAME into Docker!"
         fi
     done
+    echo "=========================================================="
     echo "All Docker images loaded successfully!"
 else
     echo "ERROR: No Docker image archives found in: $IMAGE_DIR"
