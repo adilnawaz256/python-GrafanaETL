@@ -46,25 +46,21 @@ EOF
 elif [ -x "$SKOPEO_BIN" ]; then
     echo "Skopeo detected. Downloading Linux x86_64 Docker images directly..."
 
-    mkdir -p "$BUNDLE_DIR/docker_images/tmp"
-    cd "$BUNDLE_DIR/docker_images/tmp"
+    rm -f "$BUNDLE_DIR/docker_images"/*.tar* 2>/dev/null || true
 
-    echo "Downloading postgres:15-alpine..."
-    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/library/postgres:15-alpine docker-archive:postgres.tar:postgres:15-alpine
+    echo "Downloading postgres:15-alpine image..."
+    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/library/postgres:15-alpine docker-archive:"$BUNDLE_DIR/docker_images/postgres.tar":postgres:15-alpine
+    gzip -f "$BUNDLE_DIR/docker_images/postgres.tar"
 
-    echo "Downloading grafana/grafana:latest..."
-    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/grafana/grafana:latest docker-archive:grafana.tar:custom_grafana:latest
+    echo "Downloading grafana/grafana:latest image..."
+    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/grafana/grafana:latest docker-archive:"$BUNDLE_DIR/docker_images/grafana.tar":custom_grafana:latest
+    gzip -f "$BUNDLE_DIR/docker_images/grafana.tar"
 
-    echo "Downloading python:3.11-slim (for ETL app container)..."
-    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/library/python:3.11-slim docker-archive:python.tar:aramco_etl_app:latest
+    echo "Downloading python:3.11-slim image (for ETL app container)..."
+    "$SKOPEO_BIN" copy --override-os linux --override-arch amd64 docker://docker.io/library/python:3.11-slim docker-archive:"$BUNDLE_DIR/docker_images/python.tar":aramco_etl_app:latest
+    gzip -f "$BUNDLE_DIR/docker_images/python.tar"
 
-    echo "Combining image archives into offline_docker_images.tar.gz..."
-    tar -cf "$BUNDLE_DIR/docker_images/offline_docker_images.tar" postgres.tar grafana.tar python.tar
-    gzip -f "$BUNDLE_DIR/docker_images/offline_docker_images.tar"
-    rm -rf "$BUNDLE_DIR/docker_images/tmp"
-    cd "$PROJECT_ROOT"
-
-    echo "Docker images successfully downloaded via Skopeo!"
+    echo "Docker images successfully downloaded as standard Docker archives!"
 else
     echo "WARNING: Neither Docker Desktop nor Skopeo available."
 fi
@@ -122,7 +118,7 @@ echo "=========================================================="
 echo " 5. Copying Application Code & Environment Config"
 echo "=========================================================="
 mkdir -p "$BUNDLE_DIR/pyton_newETL"
-rsync -av --exclude='USB_OFFLINE_BUNDLE' --exclude='USB_OFFLINE_BUNDLE.zip' --exclude='test_postgres.tar' --exclude='.git' --exclude='__pycache__' "$PROJECT_ROOT/" "$BUNDLE_DIR/pyton_newETL/"
+rsync -av --exclude='USB_OFFLINE_BUNDLE' --exclude='USB_OFFLINE_BUNDLE.zip' --exclude='*.tar' --exclude='.git' --exclude='__pycache__' "$PROJECT_ROOT/" "$BUNDLE_DIR/pyton_newETL/"
 
 if [ ! -f "$BUNDLE_DIR/pyton_newETL/.env" ]; then
     cp "$PROJECT_ROOT/.env.example" "$BUNDLE_DIR/pyton_newETL/.env"
@@ -132,6 +128,6 @@ cp "$PROJECT_ROOT/scripts/install_offline.sh" "$BUNDLE_DIR/install-offline.sh"
 chmod +x "$BUNDLE_DIR/install-offline.sh" "$BUNDLE_DIR/pyton_newETL/scripts/install_offline.sh"
 
 echo "=========================================================="
-echo " SUCCESS! USB Offline Bundle generated at:"
+echo " SUCCESS! USB Offline Bundle updated at:"
 echo " $BUNDLE_DIR"
 echo "=========================================================="

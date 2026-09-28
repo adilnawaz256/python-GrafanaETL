@@ -54,13 +54,18 @@ fi
 echo "=========================================================="
 echo " 2. Loading Offline Docker Images"
 echo "=========================================================="
-TAR_FILE="$BUNDLE_DIR/docker_images/offline_docker_images.tar.gz"
-if [ -f "$TAR_FILE" ]; then
-    echo "Loading Docker images from archive..."
-    docker load -i "$TAR_FILE"
-    echo "Docker images loaded successfully!"
+IMAGE_DIR="$BUNDLE_DIR/docker_images"
+if [ -d "$IMAGE_DIR" ] && [ "$(ls -A "$IMAGE_DIR"/*.tar* 2>/dev/null)" ]; then
+    echo "Loading Docker images into daemon..."
+    for img in "$IMAGE_DIR"/*.tar*; do
+        if [ -f "$img" ]; then
+            echo "Loading image archive: $(basename "$img")..."
+            docker load -i "$img"
+        fi
+    done
+    echo "All Docker images loaded successfully!"
 else
-    echo "ERROR: Offline Docker image archive not found at: $TAR_FILE"
+    echo "ERROR: No Docker image archives found in: $IMAGE_DIR"
     exit 1
 fi
 
